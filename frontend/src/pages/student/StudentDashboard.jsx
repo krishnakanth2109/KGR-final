@@ -49,22 +49,13 @@ const StudentDashboard = () => {
     try {
       setLoading(true);
       
-      // Fetch Student Details
-      const studentRes = await fetch(`/api/students/${student.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const studentRes = await fetch(`/api/students/${student.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
       const studentData = await studentRes.json();
       
-      // Fetch Fees
-      const feesRes = await fetch(`/api/fees/${student.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const feesRes = await fetch(`/api/fees/${student.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
       const feesData = await feesRes.json();
       
-      // Fetch Exams
-      const examsRes = await fetch(`/api/exams/${student.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const examsRes = await fetch(`/api/exams/${student.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
       const examsData = await examsRes.json();
       
       setDashboardData({
@@ -74,7 +65,6 @@ const StudentDashboard = () => {
         announcements: generateAnnouncements(feesData, examsData)
       });
       
-      // Initialize Profile Form
       setProfileForm({
         phone_number: studentData.phone_number || '',
         email: studentData.email || '',
@@ -90,17 +80,13 @@ const StudentDashboard = () => {
     }
   };
 
-  // Generate Smart Announcements
   const generateAnnouncements = (fees, exams) => {
     const announcements = [];
     const today = new Date();
     
-    // Fee Reminders
     if (fees?.payments) {
       const totalPaid = fees.payments.reduce((sum, p) => sum + p.amount, 0);
-      const totalStructure = Object.values(fees.structure || {}).reduce((sum, year) => {
-        return sum + Object.values(year || {}).reduce((s, v) => s + (v || 0), 0);
-      }, 0);
+      const totalStructure = Object.values(fees.structure || {}).reduce((sum, year) => sum + Object.values(year || {}).reduce((s, v) => s + (v || 0), 0), 0);
       const balance = totalStructure - totalPaid;
       
       if (balance > 0) {
@@ -115,7 +101,6 @@ const StudentDashboard = () => {
       }
     }
     
-    // Upcoming Exams (Next 7 Days)
     const upcomingExams = exams.filter(e => {
       const examDate = new Date(e.examDate);
       const diffDays = Math.ceil((examDate - today) / (1000 * 60 * 60 * 24));
@@ -138,129 +123,85 @@ const StudentDashboard = () => {
     return announcements;
   };
 
-  // Calculate Stats
   const calculateStats = () => {
-    const { fees, exams, student: studentData } = dashboardData;
+    const { fees, exams } = dashboardData;
+    const attendance = 85; 
     
-    // Attendance (Mock for now - can be replaced with real data)
-    const attendance = 85;
-    
-    // Next Exam
-    const upcomingExams = exams.filter(e => new Date(e.examDate) >= new Date())
-      .sort((a, b) => new Date(a.examDate) - new Date(b.examDate));
+    const upcomingExams = exams.filter(e => new Date(e.examDate) >= new Date()).sort((a, b) => new Date(a.examDate) - new Date(b.examDate));
     const nextExam = upcomingExams[0];
     
-    // Fee Status
     let feeStatus = 'Paid';
     let feeColor = 'green';
     if (fees?.payments) {
       const totalPaid = fees.payments.reduce((sum, p) => sum + p.amount, 0);
-      const totalStructure = Object.values(fees.structure || {}).reduce((sum, year) => {
-        return sum + Object.values(year || {}).reduce((s, v) => s + (v || 0), 0);
-      }, 0);
+      const totalStructure = Object.values(fees.structure || {}).reduce((sum, year) => sum + Object.values(year || {}).reduce((s, v) => s + (v || 0), 0), 0);
       const balance = totalStructure - totalPaid;
       
       if (balance > 0) {
         feeStatus = `₹${balance.toLocaleString()} Due`;
-        feeColor = 'red';
+        feeColor = 'amber';
       }
     }
     
     return { attendance, nextExam, feeStatus, feeColor };
   };
 
-  // Handle Profile Update
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    setMessage({ type: '', text: '' });
-    
     try {
       const response = await fetch(`/api/students/${student.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(profileForm)
       });
-      
       if (response.ok) {
         setMessage({ type: 'success', text: 'Profile updated successfully!' });
         await fetchDashboardData();
         setTimeout(() => setShowSettings(false), 2000);
-      } else {
-        setMessage({ type: 'error', text: 'Failed to update profile.' });
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Network error occurred.' });
-    } finally {
-      setSubmitting(false);
-    }
+      } else setMessage({ type: 'error', text: 'Failed to update profile.' });
+    } catch { setMessage({ type: 'error', text: 'Network error occurred.' }); }
+    finally { setSubmitting(false); }
   };
 
-  // Handle Password Change
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setMessage({ type: 'error', text: 'Passwords do not match!' });
-      return;
+      setMessage({ type: 'error', text: 'Passwords do not match!' }); return;
     }
-    
-    if (passwordForm.newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'Password must be at least 6 characters.' });
-      return;
-    }
-    
     setSubmitting(true);
-    setMessage({ type: '', text: '' });
-    
     try {
       const response = await fetch(`/api/students/${student.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ password: passwordForm.newPassword })
       });
-      
       if (response.ok) {
         setMessage({ type: 'success', text: 'Password changed successfully!' });
-        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
         setTimeout(() => setShowSettings(false), 2000);
-      } else {
-        setMessage({ type: 'error', text: 'Failed to change password.' });
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Network error occurred.' });
-    } finally {
-      setSubmitting(false);
-    }
+      } else setMessage({ type: 'error', text: 'Failed to change password.' });
+    } catch { setMessage({ type: 'error', text: 'Network error occurred.' }); }
+    finally { setSubmitting(false); }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="animate-spin text-amber-500" size={48} />
-      </div>
-    );
-  }
+  if (loading) return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin text-amber-400" size={48} /></div>;
 
   const stats = calculateStats();
 
   return (
-    <div className="space-y-6 animate-fade-in p-6">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 rounded-2xl p-8 text-white shadow-2xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-black opacity-5"></div>
+    <div className="space-y-6 animate-fade-in p-6 bg-[#fdfdf9] min-h-screen">
+      
+      {/* Welcome Banner - Shiny Champagne Gold */}
+      <div className="bg-gradient-to-r from-yellow-300 via-amber-100 to-yellow-50 rounded-2xl p-8 text-amber-900 shadow-xl shadow-amber-200/50 relative overflow-hidden border border-white/50">
+        {/* Glassmorphism Overlay */}
+        <div className="absolute inset-0 bg-white/30 backdrop-blur-[2px]"></div>
+        
         <div className="relative z-10 flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold mb-2 drop-shadow-lg">
+            <h1 className="text-4xl font-bold mb-2 drop-shadow-sm text-amber-900 tracking-tight">
               Welcome back, {dashboardData.student?.first_name}! 👋
             </h1>
-            <p className="text-amber-100 max-w-xl text-lg">
+            <p className="text-amber-800 font-medium text-lg">
               {stats.nextExam 
                 ? `You have an exam on ${new Date(stats.nextExam.examDate).toLocaleDateString()}`
                 : 'No upcoming exams. Keep learning!'}
@@ -268,341 +209,202 @@ const StudentDashboard = () => {
           </div>
           <button
             onClick={() => setShowSettings(true)}
-            className="p-4 bg-white/20 hover:bg-white/30 rounded-full backdrop-blur-sm transition-all transform hover:scale-110"
+            className="p-3 bg-white/60 hover:bg-white/90 rounded-full backdrop-blur-md transition-all shadow-md hover:shadow-lg border border-white/60 hover:scale-105"
             title="Settings"
           >
-            <Settings size={28} className="text-white" />
+            <Settings size={26} className="text-amber-700" />
           </button>
         </div>
-        <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-10 translate-y-10">
+        <div className="absolute right-0 bottom-0 opacity-20 transform translate-x-10 translate-y-10 text-amber-600 mix-blend-overlay">
           <BookOpen size={250} strokeWidth={1.5} />
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid - Glass Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-amber-500 hover:shadow-xl transition-shadow">
+        
+        {/* Attendance */}
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-emerald-200 hover:shadow-lg transition-all">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Overall Attendance</p>
-              <h3 className="text-4xl font-bold text-gray-800 mt-2">{stats.attendance}%</h3>
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Attendance</p>
+              <h3 className="text-3xl font-black text-slate-800 mt-1">{stats.attendance}%</h3>
             </div>
-            <div className="p-3 bg-green-50 rounded-lg text-green-600">
-              <Clock size={28} />
-            </div>
+            <div className="p-3 bg-gradient-to-br from-emerald-50 to-white rounded-xl shadow-sm text-emerald-600 border border-emerald-100"><Clock size={24} /></div>
           </div>
-          <div className="mt-4 w-full bg-gray-200 rounded-full h-3">
-            <div className="bg-gradient-to-r from-green-400 to-emerald-500 h-3 rounded-full shadow-inner" 
-                 style={{ width: `${stats.attendance}%` }}></div>
+          <div className="mt-4 w-full bg-slate-100 rounded-full h-2 shadow-inner">
+            <div className="bg-gradient-to-r from-emerald-400 to-emerald-300 h-2 rounded-full shadow-md" style={{ width: `${stats.attendance}%` }}></div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-shadow">
+        {/* Next Exam */}
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-blue-200 hover:shadow-lg transition-all">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Next Exam</p>
-              <h3 className="text-xl font-bold text-gray-800 mt-2">
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Next Exam</p>
+              <h3 className="text-xl font-bold text-slate-800 mt-1 truncate max-w-[150px]">
                 {stats.nextExam?.subject || 'None'}
               </h3>
               {stats.nextExam && (
-                <p className="text-sm text-blue-600 font-medium">
-                  {new Date(stats.nextExam.examDate).toLocaleDateString()} at {stats.nextExam.startTime}
+                <p className="text-xs text-blue-600 font-bold mt-1 bg-blue-50 px-2 py-1 rounded-md inline-block border border-blue-100">
+                  {new Date(stats.nextExam.examDate).toLocaleDateString()} • {stats.nextExam.startTime}
                 </p>
               )}
             </div>
-            <div className="p-3 bg-blue-50 rounded-lg text-blue-600">
-              <Calendar size={28} />
-            </div>
+            <div className="p-3 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-sm text-blue-600 border border-blue-100"><Calendar size={24} /></div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-amber-500 hover:shadow-xl transition-shadow">
+        {/* Fee Status */}
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-amber-200 hover:shadow-lg transition-all">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Fees Status</p>
-              <h3 className={`text-xl font-bold mt-2 text-${stats.feeColor}-600`}>
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Fees Status</p>
+              <h3 className={`text-xl font-black mt-1 ${stats.feeColor === 'green' ? 'text-emerald-600' : 'text-amber-600'}`}>
                 {stats.feeStatus}
               </h3>
-              <p className="text-sm text-gray-400">
-                {stats.feeStatus === 'Paid' ? 'All clear!' : 'Payment pending'}
+              <p className="text-xs text-slate-400 font-medium mt-1">
+                {stats.feeStatus === 'Paid' ? 'No Dues Pending' : 'Action Required'}
               </p>
             </div>
-            <div className={`p-3 bg-${stats.feeColor === 'green' ? 'green' : 'red'}-50 rounded-lg text-${stats.feeColor === 'green' ? 'green' : 'red'}-600`}>
-              {stats.feeColor === 'green' ? <CheckCircle2 size={28} /> : <AlertTriangle size={28} />}
+            <div className={`p-3 rounded-xl shadow-sm border ${stats.feeColor === 'green' ? 'bg-gradient-to-br from-emerald-50 to-white text-emerald-600 border-emerald-100' : 'bg-gradient-to-br from-amber-50 to-white text-amber-600 border-amber-100'}`}>
+              {stats.feeColor === 'green' ? <CheckCircle2 size={24} /> : <AlertTriangle size={24} />}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content Split */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Announcements & Notifications */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <Bell className="text-amber-500" size={24} /> 
-              Notifications & Alerts
-            </h2>
-          </div>
-          <div className="space-y-4 max-h-96 overflow-y-auto">
+        
+        {/* Notifications */}
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-6">
+            <div className="p-2 bg-yellow-100 rounded-lg text-amber-600"><Bell size={20} /></div> 
+            Updates & Alerts
+          </h2>
+          <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
             {dashboardData.announcements.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No new notifications</p>
+              <p className="text-slate-400 text-center py-10 italic">No new notifications</p>
             ) : (
               dashboardData.announcements.map((item) => (
-                <div 
-                  key={item.id} 
-                  className={`flex items-center gap-4 p-4 rounded-lg transition-all hover:scale-[1.02] ${
-                    item.priority === 'high' 
-                      ? 'bg-red-50 border-l-4 border-red-500' 
-                      : 'bg-amber-50 border-l-4 border-amber-500'
-                  }`}
-                >
-                  <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center ${
-                    item.priority === 'high' ? 'bg-red-100' : 'bg-amber-100'
+                <div key={item.id} className={`flex items-center gap-4 p-4 rounded-xl border transition-all hover:bg-gradient-to-r hover:from-white hover:to-slate-50 ${
+                    item.priority === 'high' ? 'border-l-4 border-l-red-400 bg-red-50/20' : 'border-l-4 border-l-amber-300 bg-yellow-50/30'
+                }`}>
+                  <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${
+                    item.priority === 'high' ? 'bg-white text-red-500 border border-red-100' : 'bg-white text-amber-500 border border-amber-100'
                   }`}>
-                    {item.icon === 'alert' ? (
-                      <AlertTriangle className={item.priority === 'high' ? 'text-red-600' : 'text-amber-600'} size={24} />
-                    ) : (
-                      <Calendar className={item.priority === 'high' ? 'text-red-600' : 'text-amber-600'} size={24} />
-                    )}
+                    {item.icon === 'alert' ? <AlertTriangle size={18} /> : <Calendar size={18} />}
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-800">{item.title}</h4>
-                    <p className="text-xs text-gray-500 mt-1">{item.date}</p>
+                    <h4 className="font-bold text-slate-800 text-sm">{item.title}</h4>
+                    <p className="text-xs text-slate-500 mt-0.5 font-medium">{item.date}</p>
                   </div>
-                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                    item.type === 'Fee' 
-                      ? 'bg-purple-100 text-purple-700' 
-                      : 'bg-blue-100 text-blue-700'
-                  }`}>
-                    {item.type}
-                  </span>
                 </div>
               ))
             )}
           </div>
         </div>
 
-        {/* Quick Profile */}
-        <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl shadow-lg border border-amber-200 p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <User className="text-amber-600" size={20} />
-            My Profile
+        {/* Profile Card - Shiny Pearl Effect */}
+        <div className="bg-gradient-to-b from-white to-slate-50 rounded-2xl shadow-sm border border-slate-200 p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-yellow-200/20 to-amber-100/20 rounded-full blur-2xl -mr-10 -mt-10"></div>
+          
+          <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 relative z-10">
+            <User className="text-amber-500" size={20} /> My Profile
           </h2>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                {dashboardData.student?.first_name?.charAt(0)}
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-800 text-lg">
-                  {dashboardData.student?.first_name} {dashboardData.student?.last_name}
-                </h3>
-                <p className="text-sm text-gray-500">{dashboardData.student?.admission_number}</p>
-              </div>
+          
+          <div className="flex items-center gap-4 mb-6 relative z-10">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-yellow-400 to-amber-200 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-amber-200 border-2 border-white">
+              {dashboardData.student?.first_name?.charAt(0)}
             </div>
-            
-            <div className="space-y-3 pt-4 border-t border-amber-200">
-              <div className="flex items-center gap-3 text-sm">
-                <GraduationCap className="text-amber-600" size={18} />
-                <span className="text-gray-700">{dashboardData.student?.program}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <Mail className="text-amber-600" size={18} />
-                <span className="text-gray-700 truncate">{dashboardData.student?.email}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <Phone className="text-amber-600" size={18} />
-                <span className="text-gray-700">{dashboardData.student?.phone_number}</span>
-              </div>
+            <div>
+              <h3 className="font-bold text-slate-800 text-lg">
+                {dashboardData.student?.first_name} {dashboardData.student?.last_name}
+              </h3>
+              <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 text-xs font-bold rounded-md uppercase tracking-wider">
+                {dashboardData.student?.admission_number}
+              </span>
+            </div>
+          </div>
+          
+          <div className="space-y-3 relative z-10">
+            <div className="flex items-center gap-3 text-sm p-3 bg-white/80 rounded-xl border border-slate-100 shadow-sm backdrop-blur-sm">
+              <GraduationCap className="text-amber-500" size={18} />
+              <span className="font-medium text-slate-700">{dashboardData.student?.program || 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm p-3 bg-white/80 rounded-xl border border-slate-100 shadow-sm backdrop-blur-sm">
+              <Mail className="text-amber-500" size={18} />
+              <span className="font-medium text-slate-700 truncate">{dashboardData.student?.email || 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm p-3 bg-white/80 rounded-xl border border-slate-100 shadow-sm backdrop-blur-sm">
+              <Phone className="text-amber-500" size={18} />
+              <span className="font-medium text-slate-700">{dashboardData.student?.phone_number || 'N/A'}</span>
             </div>
           </div>
         </div>
+
       </div>
 
-      {/* Settings Modal */}
+      {/* Settings Modal - Shiny Gold Theme */}
       {showSettings && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gradient-to-r from-amber-500 to-yellow-500 text-white p-6 rounded-t-2xl flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Account Settings</h2>
-              <button 
-                onClick={() => setShowSettings(false)}
-                className="p-2 hover:bg-white/20 rounded-full transition"
-              >
-                <XCircle size={24} />
-              </button>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200 border border-white/50">
+            <div className="bg-gradient-to-r from-yellow-400 to-amber-300 p-5 flex justify-between items-center text-white shadow-md">
+              <h2 className="text-xl font-bold flex items-center gap-2"><Settings size={20}/> Account Settings</h2>
+              <button onClick={() => setShowSettings(false)} className="hover:bg-white/20 p-1 rounded-full transition-colors"><XCircle/></button>
             </div>
             
-            {/* Tabs */}
-            <div className="flex border-b">
-              <button
-                onClick={() => setSettingsTab('profile')}
-                className={`flex-1 py-3 font-semibold transition ${
-                  settingsTab === 'profile'
-                    ? 'text-amber-600 border-b-2 border-amber-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Edit Profile
-              </button>
-              <button
-                onClick={() => setSettingsTab('password')}
-                className={`flex-1 py-3 font-semibold transition ${
-                  settingsTab === 'password'
-                    ? 'text-amber-600 border-b-2 border-amber-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Change Password
-              </button>
+            <div className="flex border-b border-slate-100 bg-slate-50/50">
+              {['profile', 'password'].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setSettingsTab(tab)}
+                  className={`flex-1 py-3 text-sm font-bold uppercase tracking-wide transition-all ${
+                    settingsTab === tab ? 'text-amber-600 border-b-2 border-amber-500 bg-white shadow-sm' : 'text-slate-400 hover:bg-slate-100'
+                  }`}
+                >
+                  {tab === 'profile' ? 'Edit Profile' : 'Security'}
+                </button>
+              ))}
             </div>
-            
-            {/* Message Display */}
-            {message.text && (
-              <div className={`m-6 p-4 rounded-lg ${
-                message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-              }`}>
-                {message.text}
-              </div>
-            )}
-            
-            {/* Profile Tab */}
-            {settingsTab === 'profile' && (
-              <form onSubmit={handleProfileUpdate} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                  <input
-                    type="email"
-                    value={profileForm.email}
-                    onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                  />
+
+            <div className="p-6">
+              {message.text && (
+                <div className={`mb-4 p-3 rounded-xl text-sm font-medium border ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                  {message.text}
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={profileForm.phone_number}
-                    onChange={(e) => setProfileForm({ ...profileForm, phone_number: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Address</label>
-                  <input
-                    type="text"
-                    placeholder="Address Line"
-                    value={profileForm.addresses[0]?.address_line1 || ''}
-                    onChange={(e) => setProfileForm({
-                      ...profileForm,
-                      addresses: [{
-                        ...profileForm.addresses[0],
-                        address_line1: e.target.value
-                      }]
-                    })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none mb-2"
-                  />
-                  <div className="grid grid-cols-3 gap-2">
-                    <input
-                      type="text"
-                      placeholder="City"
-                      value={profileForm.addresses[0]?.city || ''}
-                      onChange={(e) => setProfileForm({
-                        ...profileForm,
-                        addresses: [{
-                          ...profileForm.addresses[0],
-                          city: e.target.value
-                        }]
-                      })}
-                      className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                    />
-                    <input
-                      type="text"
-                      placeholder="State"
-                      value={profileForm.addresses[0]?.state || ''}
-                      onChange={(e) => setProfileForm({
-                        ...profileForm,
-                        addresses: [{
-                          ...profileForm.addresses[0],
-                          state: e.target.value
-                        }]
-                      })}
-                      className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                    />
-                    <input
-                      type="text"
-                      placeholder="PIN"
-                      value={profileForm.addresses[0]?.postal_code || ''}
-                      onChange={(e) => setProfileForm({
-                        ...profileForm,
-                        addresses: [{
-                          ...profileForm.addresses[0],
-                          postal_code: e.target.value
-                        }]
-                      })}
-                      className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                    />
+              )}
+
+              {settingsTab === 'profile' ? (
+                <form onSubmit={handleProfileUpdate} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">Phone</label>
+                    <input type="tel" value={profileForm.phone_number} onChange={e => setProfileForm({...profileForm, phone_number: e.target.value})} className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-200 focus:border-amber-400 outline-none transition-all"/>
                   </div>
-                </div>
-                
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white py-3 rounded-lg font-bold hover:from-amber-600 hover:to-yellow-600 transition disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {submitting ? <Loader2 className="animate-spin" size={20} /> : 'Save Changes'}
-                </button>
-              </form>
-            )}
-            
-            {/* Password Tab */}
-            {settingsTab === 'password' && (
-              <form onSubmit={handlePasswordChange} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
-                  <input
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-                  <input
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
-                  <input
-                    type="password"
-                    value={passwordForm.confirmPassword}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                    required
-                  />
-                </div>
-                
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white py-3 rounded-lg font-bold hover:from-amber-600 hover:to-yellow-600 transition disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {submitting ? <Loader2 className="animate-spin" size={20} /> : 'Change Password'}
-                </button>
-              </form>
-            )}
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">Email</label>
+                    <input type="email" value={profileForm.email} onChange={e => setProfileForm({...profileForm, email: e.target.value})} className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-200 focus:border-amber-400 outline-none transition-all"/>
+                  </div>
+                  <button disabled={submitting} className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-white rounded-xl font-bold shadow-lg shadow-amber-200 transition-all flex justify-center items-center gap-2 disabled:opacity-50 transform hover:-translate-y-0.5">
+                    {submitting ? <Loader2 className="animate-spin" size={20} /> : 'Save Changes'}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handlePasswordChange} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">New Password</label>
+                    <input type="password" value={passwordForm.newPassword} onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})} className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-200 focus:border-amber-400 outline-none transition-all"/>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">Confirm Password</label>
+                    <input type="password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})} className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-200 focus:border-amber-400 outline-none transition-all"/>
+                  </div>
+                  <button disabled={submitting} className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-white rounded-xl font-bold shadow-lg shadow-amber-200 transition-all flex justify-center items-center gap-2 disabled:opacity-50 transform hover:-translate-y-0.5">
+                    {submitting ? <Loader2 className="animate-spin" size={20} /> : 'Update Password'}
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       )}

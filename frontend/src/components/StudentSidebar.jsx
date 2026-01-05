@@ -46,58 +46,68 @@ const StudentSidebar = () => {
 
   const sidebarWidth = isCollapsed ? 'w-20' : 'w-72';
   
+  // --- STYLING: Shiny Light (Champagne & Gold) Theme ---
   const linkClasses = ({ isActive }) =>
     `relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group overflow-hidden ${
       isActive
-        ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 font-bold shadow-lg shadow-amber-500/30'
-        : 'text-slate-400 hover:bg-white/5 hover:text-amber-400'
+        // Active: Gradient from Gold to Champagne
+        ? 'bg-gradient-to-r from-yellow-400 to-amber-200 text-amber-900 font-bold shadow-lg shadow-amber-500/30 border border-white/20'
+        : 'text-slate-400 hover:bg-amber-500/10 hover:text-amber-200'
     } ${isCollapsed ? 'justify-center' : ''}`;
 
   const subLinkClasses = ({ isActive }) =>
     `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-300 ${
       isActive
-        ? 'bg-yellow-500/20 text-amber-300 font-medium border-l-2 border-amber-400 pl-2'
-        : 'text-slate-500 hover:text-amber-300 hover:bg-white/5'
+        // Sub-active: Subtle gold background with solid gold text
+        ? 'bg-amber-500/10 text-amber-300 font-medium border-l-2 border-amber-300 pl-2'
+        : 'text-slate-500 hover:text-amber-200 hover:bg-amber-500/5'
     }`;
 
   return (
     <aside className={`${sidebarWidth} bg-[#0f172a] h-screen flex flex-col border-r border-slate-800 shadow-2xl transition-all duration-300 ease-in-out relative z-50`}>
       
-      {/* Header */}
-      <div className="p-4 flex items-center justify-between relative">
+      {/* Header & Logo */}
+      <div className="p-4 flex items-center justify-between relative h-20">
         {!isCollapsed && (
-          <div className="flex items-center gap-2 animate-fadeIn">
-            <div className="bg-gradient-to-tr from-amber-400 to-yellow-500 p-1.5 rounded-lg shadow-lg">
-              <GraduationCap className="text-white" size={20} />
+          <div className="flex items-center gap-3 animate-fadeIn">
+            {/* KGR Logo */}
+            <img 
+              src="https://i.postimg.cc/7hQ3v2fc/logo.png" 
+              alt="KGR Logo" 
+              className="h-10 w-10 object-contain drop-shadow-md brightness-110"
+            />
+            <div className="flex flex-col">
+              <span className="text-lg font-bold text-slate-100 leading-tight">KGR College</span>
+              <span className="text-[10px] text-amber-200 font-medium tracking-widest uppercase text-shadow-sm">Student Portal</span>
             </div>
-            <span className="text-lg font-bold text-white tracking-tight">EduPortal</span>
           </div>
         )}
         
         <button 
           onClick={toggleSidebar}
-          className={`p-2 rounded-lg text-slate-400 hover:bg-amber-500/10 hover:text-amber-400 transition-colors ${isCollapsed ? 'mx-auto' : ''}`}
+          className={`p-2 rounded-lg text-slate-400 hover:bg-amber-500/10 hover:text-amber-200 transition-colors ${isCollapsed ? 'mx-auto' : ''}`}
         >
           {isCollapsed ? <Menu size={20} /> : <ChevronsLeft size={20} />}
         </button>
       </div>
 
       {/* Profile Summary */}
-      <div className="px-3 mb-6">
-        <div className={`group relative bg-gradient-to-br from-amber-900/30 to-yellow-900/20 border border-amber-500/30 rounded-2xl transition-all duration-300 hover:border-amber-400/50 hover:shadow-lg hover:shadow-amber-500/20 ${isCollapsed ? 'p-2 flex justify-center' : 'p-3'}`}>
+      <div className="px-3 mb-6 mt-2">
+        <div className={`group relative bg-slate-900/50 border border-amber-500/20 rounded-2xl transition-all duration-300 hover:border-amber-400/40 hover:shadow-lg hover:shadow-amber-500/10 ${isCollapsed ? 'p-2 flex justify-center' : 'p-3'}`}>
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-slate-900 text-xl font-bold shadow-lg uppercase">
+              {/* Profile Initials - Gold Gradient */}
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-amber-200 flex items-center justify-center text-amber-900 text-xl font-bold shadow-md border border-amber-100/20">
                 {student.name?.charAt(0) || 'S'}
               </div>
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-slate-900 rounded-full"></div>
+              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
             </div>
             {!isCollapsed && (
               <div className="overflow-hidden animate-fadeIn">
-                <p className="text-sm font-semibold text-white truncate group-hover:text-amber-200">
+                <p className="text-sm font-semibold text-slate-100 truncate group-hover:text-amber-200 transition-colors">
                   {student.name || 'Student'}
                 </p>
-                <p className="text-[10px] text-amber-300 truncate font-mono opacity-80">
+                <p className="text-[10px] text-slate-400 truncate font-mono">
                   {student.admission_number || 'ID: --'}
                 </p>
               </div>
@@ -147,12 +157,12 @@ const StudentSidebar = () => {
             }}
             className={`flex items-center w-full px-3 py-3 rounded-xl transition-all duration-300 group ${
               (isFinanceOpen || location.pathname.includes('/student/fees'))
-                ? 'bg-slate-800/50 text-amber-400 shadow-md' 
-                : 'text-slate-400 hover:bg-white/5 hover:text-amber-400'
+                ? 'bg-slate-800/80 text-amber-300 shadow-sm border border-amber-500/20' 
+                : 'text-slate-400 hover:bg-amber-500/10 hover:text-amber-200'
             } ${isCollapsed ? 'justify-center' : 'justify-between'}`}
           >
             <div className="flex items-center gap-3">
-              <Wallet size={20} className={isFinanceOpen ? 'text-amber-400' : ''} />
+              <Wallet size={20} className={isFinanceOpen ? 'text-amber-300' : ''} />
               {!isCollapsed && <span className="font-medium animate-fadeIn">Finance</span>}
             </div>
             {!isCollapsed && (
@@ -165,7 +175,7 @@ const StudentSidebar = () => {
               (isFinanceOpen && !isCollapsed) ? 'max-h-40 opacity-100 mt-1 pl-4' : 'max-h-0 opacity-0'
             }`}
           >
-            <div className="border-l-2 border-amber-700/30 pl-2 space-y-1">
+            <div className="border-l-2 border-slate-700 pl-2 space-y-1">
               <NavLink to="/student/fees/pay" className={subLinkClasses}>
                 <CreditCard size={16} />
                 <span>Due Payments</span>
@@ -194,7 +204,7 @@ const StudentSidebar = () => {
       <div className="p-3 border-t border-slate-800">
         <button
           onClick={handleLogout}
-          className={`flex items-center gap-3 px-3 py-3 w-full rounded-xl text-red-400 hover:text-white hover:bg-red-500/10 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+          className={`flex items-center gap-3 px-3 py-3 w-full rounded-xl text-slate-400 hover:text-red-300 hover:bg-red-500/10 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
           title="Logout"
         >
           <LogOut size={20} className="shrink-0" />
