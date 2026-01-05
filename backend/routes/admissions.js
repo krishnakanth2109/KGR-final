@@ -3,7 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const Application = require('../models/Application');
-const Notification = require('../models/Notification'); // Import Notification Model
+const Notification = require('../models/notification'); // Import Notification Model
 
 // POST: Submit Application
 router.post('/', async (req, res) => {

@@ -3,7 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const Contact = require('../models/contact');
-const Notification = require('../models/Notification'); // Import Notification Model
+const Notification = require('../models/notification'); // Import Notification Model
 
 // GET all messages
 router.get('/', async (req, res) => {

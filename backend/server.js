@@ -13,7 +13,8 @@ const uploadRoutes = require('./routes/upload');
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
-  "https://kgr-college.netlify.app"
+  "https://kgr-college.netlify.app",
+  "https://kgr-final.onrender.com"
 ];
 
 app.use(cors({
